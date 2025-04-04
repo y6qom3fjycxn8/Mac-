@@ -4,114 +4,125 @@ import pyautogui
 import time
 from pynput import keyboard
 import os
-import sys
+import threading
+import subprocess
 
-def find_aios_window():
-    """查找 aios 窗口"""
+running = True
+current_directory = os.path.dirname(__file__)
+
+
+def get_window_rect():
+    """获取aiOS窗口的位置和大小"""
     try:
-        # 获取主屏幕尺寸
-        screen_width, screen_height = pyautogui.size()
-        
-        # 计算监控区域（在右上角）
-        x = screen_width - 600  # 距离右边 600 像素
-        y = 200                # 距离顶部 200 像素
-        monitor_width = 200
-        monitor_height = 100
-        
-        # 确保区域在屏幕内
-        if x < 0:
-            x = 0
-        if y < 0:
-            y = 0
-        if x + monitor_width > screen_width:
-            x = screen_width - monitor_width
-        if y + monitor_height > screen_height:
-            y = screen_height - monitor_height
-            
-        return (x, y, monitor_width, monitor_height)
+        # 使用 osascript 获取窗口信息
+        script = '''
+        tell application "System Events"
+            set frontApp to first application process whose frontmost is true
+            if name of frontApp contains "Hyperspace" then
+                set appWindow to first window of frontApp
+                return {position, size} of appWindow
+            end if
+        end tell
+        '''
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+        if result.stdout.strip():
+            # 解析窗口位置和大小
+            pos_size = eval(result.stdout.strip())
+            left, top = pos_size[0]
+            width, height = pos_size[1]
+            # 计算监控区域（在窗口右上角）
+            x = left + width - 350  # 距离右边 350 像素
+            y = top + 150  # 距离顶部 150 像素
+            monitor_width = 200
+            monitor_height = 200
+            return (x, y, monitor_width, monitor_height)
     except Exception as e:
-        print(f"查找窗口时出错: {str(e)}")
+        print(f"获取窗口位置时出错: {str(e)}")
         return None
 
-def main():
-    # 设置pyautogui的安全设置
-    pyautogui.FAILSAFE = True
-    pyautogui.PAUSE = 0.1
-    
-    print("\n监控已启动，按F12停止...")
-    
-    # 获取监控区域
-    region = find_aios_window()
-    if not region:
-        print("错误：无法找到监控区域")
-        return
-        
-    print(f"将监控以下区域：")
-    print(f"x={region[0]}, y={region[1]}, width={region[2]}, height={region[3]}")
-    
-    # 加载模板图片
-    template = cv2.imread('disconnected.png')
-    if template is None:
-        print("错误：找不到模板图片 'disconnected.png'")
-        return
-    
-    # 转换模板图片为灰度图
-    template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-    
-    # 设置匹配阈值
-    threshold = 0.3
-    
-    # 创建键盘监听器
-    def on_press(key):
-        if key == keyboard.Key.f12:
-            print("\n停止监控")
-            return False
-    
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
-    
-    print("开始监控...")
-    print("提示：当前匹配阈值设置为", threshold)
-    print("如果匹配不准确，可以调整 threshold 值（0.3-0.8之间）")
-    
+
+def find_and_click(image_path, screenshot, region):
     try:
-        while listener.running:
-            try:
-                # 截取屏幕指定区域
-                screenshot = pyautogui.screenshot(region=region)
-                screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
-                screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-                
-                # 模板匹配
-                result = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-                
-                # 打印当前匹配度
-                print(f"\r当前匹配度: {max_val:.2f}", end="")
-                
-                # 如果匹配度超过阈值，执行点击
-                if max_val >= threshold:
-                    print(f"\n检测到断开状态，匹配度: {max_val:.2f}")
-                    # 计算点击位置
-                    click_x = region[0] + max_loc[0] + template.shape[1]//2
-                    click_y = region[1] + max_loc[1] + template.shape[0]//2
-                    # 执行点击
-                    pyautogui.click(click_x, click_y)
-                    print(f"已点击位置: x={click_x}, y={click_y}")
-                    # 等待一段时间再继续监控
-                    time.sleep(2)
-                
-                # 短暂延迟，避免CPU占用过高
-                time.sleep(0.5)
-                
-            except Exception as e:
-                print(f"\n发生错误: {str(e)}")
-                time.sleep(1)
-            
-    except KeyboardInterrupt:
-        print("\n程序已停止")
-    finally:
-        listener.stop()
+        template_rgb = cv2.imdecode(np.fromfile(image_path, dtype=np.uint8), -1)
+        if template_rgb is None:
+            return False
+
+        template = cv2.cvtColor(template_rgb, cv2.COLOR_RGB2BGR)
+        screenshot_bgr = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
+
+        res = cv2.matchTemplate(screenshot_bgr, template, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.5
+        loc = np.where(res >= threshold)
+
+        if len(loc[0]) > 0:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            template_h, template_w = template.shape[:2]
+            center_x = max_loc[0] + template_w // 2
+            center_y = max_loc[1] + template_h // 2
+            screen_x = center_x + region[0]
+            screen_y = center_y + region[1]
+            pyautogui.click(screen_x, screen_y)
+            print("✓ 已点击断开状态的开关")
+            return True
+        return False
+    except Exception as e:
+        print(f"匹配图片时出错: {str(e)}")
+        return False
+
+
+def is_aios_window():
+    """检查当前窗口是否是 aios"""
+    try:
+        script = '''
+        tell application "System Events"
+            set frontApp to first application process whose frontmost is true
+            return name of frontApp contains "Hyperspace"
+        end tell
+        '''
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+        return result.stdout.strip().lower() == 'true'
+    except:
+        return False
+
+
+def run():
+    global running
+    disconnected_path = os.path.join(current_directory, 'disconnected.png')
+
+    if not os.path.exists(disconnected_path):
+        print("错误: 未找到模板图片 'disconnected.png'")
+        return
+
+    print("监控已启动，按F12停止...")
+
+    while running:
+        try:
+            if is_aios_window():
+                region = get_window_rect()
+                if region:
+                    screenshot = pyautogui.screenshot(region=region)
+                    screenshot = np.array(screenshot)
+                    if find_and_click(disconnected_path, screenshot, region):
+                        time.sleep(2)
+            time.sleep(0.5)
+
+        except Exception as e:
+            print(f"运行时出错: {str(e)}")
+            time.sleep(0.5)
+
+
+def on_press(key):
+    global running
+    if key == keyboard.Key.f12:
+        print("\n停止监控")
+        running = False
+        return False
+
 
 if __name__ == "__main__":
-    main()
+    # 启动键盘监听
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
+    # 运行主程序
+    run()
