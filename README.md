@@ -2,23 +2,38 @@
 
 自动监控软件连接状态并在断开时自动重连的Mac应用程序。
 
+## 系统要求
+
+- Python 3.6 或更高版本
+- pip3 包管理器
+
+## 安装步骤
+
+1. 安装依赖：
+```bash
+pip3 install -r requirements.txt
+```
+
+2. 准备模板图片：
+- `disconnected.png` - 连接断开状态的截图
+
 ## 使用方法
 
-1. 准备三张截图（保存在当前目录）：
-   - `full.png` - 软件完整截图
-   - `connected.png` - 连接正常状态截图
-   - `disconnected.png` - 连接断开状态截图
-
-2. 下载并运行一键启动脚本：
+1. 运行监控程序：
 ```bash
-curl -o oneclick.sh https://raw.githubusercontent.com/qtaxm/Mac-/main/oneclick.sh && chmod +x oneclick.sh && ./oneclick.sh
+python3 monitor_connection.py
 ```
+
+2. 按照提示操作：
+   - 将鼠标移动到断开连接开关的位置
+   - 等待3秒记录位置
+   - 按回车开始监控
 
 ## 注意事项
 
-1. 首次运行时需要授予屏幕录制权限
-2. 确保三张截图都保存在当前目录
-3. 按Control+C可以停止程序
+1. 首次运行时需要授予辅助功能权限
+2. 按F12可以停止监控
+3. 保持监控区域可见，不要遮挡
 
 ## 工作原理
 
