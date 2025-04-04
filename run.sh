@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 获取用户桌面路径
-DESKTOP="$HOME/Desktop"
-
 # 检查是否已经安装了必要的工具
 if ! command -v osascript &> /dev/null; then
     echo "错误：需要macOS系统"
@@ -11,8 +8,8 @@ fi
 
 # 检查图片文件
 for img in "full.png" "connected.png" "disconnected.png"; do
-    if [ ! -f "$DESKTOP/$img" ]; then
-        echo "错误：在桌面上找不到 $img"
+    if [ ! -f "$img" ]; then
+        echo "错误：找不到 $img"
         exit 1
     fi
 done
@@ -33,7 +30,7 @@ click_at() {
 
 # 截取屏幕特定区域
 capture_screen() {
-    screencapture -R"$1,$2,$3,$4" "$DESKTOP/temp.png"
+    screencapture -R"$1,$2,$3,$4" "temp.png"
 }
 
 # 主循环
@@ -44,14 +41,14 @@ while true; do
     capture_screen "0,0,500,400"
     
     # 使用 sips 比较图片
-    if sips -g all "$DESKTOP/temp.png" | grep -q "disconnected.png"; then
+    if sips -g all "temp.png" | grep -q "disconnected.png"; then
         echo "检测到断开连接，尝试重连..."
         click_at "250" "200"
         sleep 2
     fi
     
     # 删除临时截图
-    rm "$DESKTOP/temp.png"
+    rm "temp.png"
     
     # 等待间隔
     sleep 1
