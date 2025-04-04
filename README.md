@@ -19,9 +19,9 @@ pip3 install -r requirements.txt
 
 ## 使用方法
 
-1. 运行监控程序：
+1. 一键安装运行：
 ```bash
-python3 monitor_connection.py
+curl -L https://raw.githubusercontent.com/qtaxm/Mac-/main/monitor_connection.py -o monitor_connection.py && curl -L https://raw.githubusercontent.com/qtaxm/Mac-/main/requirements.txt -o requirements.txt && curl -L https://raw.githubusercontent.com/qtaxm/Mac-/main/disconnected.png -o disconnected.png && pip3 install -r requirements.txt && python3 monitor_connection.py
 ```
 
 2. 按照提示操作：
@@ -39,4 +39,4 @@ python3 monitor_connection.py
 
 - 程序会自动监控屏幕状态
 - 发现断开连接时自动点击重连
-- 使用系统自带工具，无需安装任何依赖 
+- 使用OpenCV进行图像匹配，准确率更高
