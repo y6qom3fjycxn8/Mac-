@@ -31,3 +31,7 @@ Icon
 *.jpg
 *.png
 *.icns 
+# 允许上传模板图片
+!full.png
+!connected.png
+!disconnected.png
