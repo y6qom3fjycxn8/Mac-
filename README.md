@@ -4,12 +4,12 @@
 
 ## 使用方法
 
-1. 准备三张截图（保存在当前目录）：  
-   * `full.png` - 软件完整截图  
-   * `connected.png` - 连接正常状态截图  
-   * `disconnected.png` - 连接断开状态截图
-2. 下载并运行一键启动脚本：
+1. 准备三张截图（保存在当前目录）：
+   - `full.png` - 软件完整截图
+   - `connected.png` - 连接正常状态截图
+   - `disconnected.png` - 连接断开状态截图
 
+2. 下载并运行一键启动脚本：
 ```bash
 curl -o oneclick.sh https://raw.githubusercontent.com/qtaxm/Mac-/main/oneclick.sh && chmod +x oneclick.sh && ./oneclick.sh
 ```
@@ -22,6 +22,6 @@ curl -o oneclick.sh https://raw.githubusercontent.com/qtaxm/Mac-/main/oneclick.s
 
 ## 工作原理
 
-* 程序会自动监控屏幕状态
-* 发现断开连接时自动点击重连
-* 使用系统自带工具，无需安装任何依赖
+- 程序会自动监控屏幕状态
+- 发现断开连接时自动点击重连
+- 使用系统自带工具，无需安装任何依赖 
