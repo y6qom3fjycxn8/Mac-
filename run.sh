@@ -23,16 +23,35 @@ tell application "System Events"
 end tell
 EOD
 
-# 获取aiOS窗口位置
+# 获取窗口位置
 get_window_position() {
+    # 先尝试 Hyperspace
     osascript <<EOD
 tell application "System Events"
-    set appWindow to first window of (first process whose name contains "aiOS")
-    set {x, y} to position of appWindow
-    set {width, height} to size of appWindow
-    return {x, y, width, height}
+    try
+        set targetProcess to first process whose name is "Hyperspace"
+        set appWindow to first window of targetProcess
+        set {x, y} to position of appWindow
+        set {width, height} to size of appWindow
+        return {x, y, width, height}
+    end try
 end tell
 EOD
+    
+    # 如果失败，尝试 aios-kernel
+    if [ $? -ne 0 ]; then
+        osascript <<EOD
+tell application "System Events"
+    try
+        set targetProcess to first process whose name is "aios-kernel"
+        set appWindow to first window of targetProcess
+        set {x, y} to position of appWindow
+        set {width, height} to size of appWindow
+        return {x, y, width, height}
+    end try
+end tell
+EOD
+    fi
 }
 
 # 定义点击函数
@@ -73,6 +92,9 @@ while true; do
         
         # 删除临时截图
         rm -f "temp.png"
+    else
+        echo "未找到目标窗口，请确保程序已启动..."
+        sleep 2
     fi
     
     # 等待间隔
