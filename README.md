@@ -40,3 +40,4 @@ curl -L https://raw.githubusercontent.com/qtaxm/Mac-/main/monitor_connection.py 
 - 程序会自动监控屏幕状态
 - 发现断开连接时自动点击重连
 - 使用OpenCV进行图像匹配，准确率更高
+<!-- Auto-update: 2025-10-19T11:26:49.107303 -->
